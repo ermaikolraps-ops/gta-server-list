@@ -7,10 +7,11 @@ tema oscuro, cero dependencias externas en tiempo de ejecución (usa
 ## Para el jugador: el instalador
 
 `dist_instalador\GTA-Server-List-Setup.exe` es el archivo que se cuelga en
-`/descargas`. Es autocontenido (el `.exe` de dentro lleva Python empotrado
-vía PyInstaller, el jugador no necesita instalar nada más), pesa ~11 MB,
-instala sin pedir admin (`PrivilegesRequired=lowest`) y deja acceso directo
-en el Escritorio y desinstalador. Wizard en español.
+`/descargas`. Es autocontenido: el `.exe` de dentro lleva Python empotrado
+(vía PyInstaller), así que el jugador no necesita instalar nada más. Pesa
+~11 MB, no pide permisos de administrador al instalar, y deja acceso directo
+en el Escritorio junto con su propio desinstalador. El asistente de
+instalación está en español.
 
 ## Para tocar el código
 

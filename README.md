@@ -12,12 +12,11 @@ Python's standard library).
 
 ### For players: the installer
 
-`dist_instalador\GTA-Server-List-Setup.exe` is the file hosted on
-`/descargas`. It's self-contained: the `.exe` has Python bundled inside it
-(via PyInstaller), so players don't need to install anything else. It's
-~11 MB, doesn't ask for administrator permissions during install, and
-leaves a desktop shortcut plus its own uninstaller. The install wizard is
-in Spanish.
+`dist_instalador\GTA-Server-List-Setup.exe` is self-contained: the `.exe`
+has Python bundled inside it (via PyInstaller), so players don't need to
+install anything else. It's ~11 MB, doesn't ask for administrator
+permissions during install, and leaves a desktop shortcut plus its own
+uninstaller. The install wizard is in Spanish.
 
 ### To hack on the code
 
@@ -80,12 +79,11 @@ tema oscuro, cero dependencias externas en tiempo de ejecución (usa
 
 ### Para el jugador: el instalador
 
-`dist_instalador\GTA-Server-List-Setup.exe` es el archivo que se cuelga en
-`/descargas`. Es autocontenido: el `.exe` de dentro lleva Python empotrado
-(vía PyInstaller), así que el jugador no necesita instalar nada más. Pesa
-~11 MB, no pide permisos de administrador al instalar, y deja acceso directo
-en el Escritorio junto con su propio desinstalador. El asistente de
-instalación está en español.
+`dist_instalador\GTA-Server-List-Setup.exe` es autocontenido: el `.exe` de
+dentro lleva Python empotrado (vía PyInstaller), así que el jugador no
+necesita instalar nada más. Pesa ~11 MB, no pide permisos de administrador
+al instalar, y deja acceso directo en el Escritorio junto con su propio
+desinstalador. El asistente de instalación está en español.
 
 ### Para tocar el código
 

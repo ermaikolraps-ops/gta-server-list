@@ -38,7 +38,7 @@ main() {
       die "no previous release recorded"
     fi
     log "rolling back to $prev"
-    git -C "$root" checkout --quiet --detach "$prev"
+    git -C "$root" checkout --quiet --detach "$prev" || die "cannot check out $prev (uncommitted changes in $root?)"
     if ! { activate "$prev" && healthy; }; then
       die "the previous release is not healthy either; check: docker compose -p takeitover logs app"
     fi
@@ -58,7 +58,7 @@ main() {
     return 0
   fi
 
-  git checkout --quiet --detach "$sha"
+  git checkout --quiet --detach "$sha" || die "cannot check out $sha (uncommitted changes in $root?)"
   log "building takeitover-app:$sha"
   # shellcheck disable=SC2086  # flags are intentionally word-split
   docker build $build_flags -t "takeitover-app:$sha" "$root"
@@ -88,7 +88,7 @@ main() {
   compose logs --tail 80 app || true
   if [ -n "$prev" ]; then
     log "restoring previous release $prev"
-    git checkout --quiet --detach "$prev"
+    git checkout --quiet --detach "$prev" || log "could not check out $prev; starting its image anyway"
     if activate "$prev" && healthy; then log "previous release $prev is running again"; fi
   fi
   die "deployment of $sha failed"
@@ -241,8 +241,13 @@ activate() {
 }
 
 healthy() {
+  local id state
+  id="$(compose ps -q app 2>/dev/null || true)"
   for _ in $(seq 1 60); do
     if curl -fsS "http://127.0.0.1:${port}/api/health" >/dev/null 2>&1; then return 0; fi
+    # Fail fast on a crash loop instead of waiting out the whole timeout.
+    state="$(docker inspect -f '{{.RestartCount}} {{.State.Status}}' "$id" 2>/dev/null || echo '0 unknown')"
+    if [ "${state%% *}" -gt 0 ] || [ "${state#* }" = exited ]; then return 1; fi
     sleep 2
   done
   return 1

@@ -21,10 +21,19 @@ export async function buildApp(
   config: Config,
   opts: { logger?: boolean | object } = {},
 ): Promise<FastifyInstance> {
+  const prefix = config.publicPath;
   const app = Fastify({
     logger: opts.logger ?? { level: config.logLevel },
     trustProxy: config.trustProxy,
     bodyLimit: 256 * 1024,
+    // Served under a path of an existing site: accept both stripped and
+    // unstripped URLs from the reverse proxy.
+    rewriteUrl: (req) => {
+      const url = req.url ?? '/';
+      if (prefix === '/') return url;
+      if (url === prefix.slice(0, -1)) return '/';
+      return url.startsWith(prefix) ? url.slice(prefix.length - 1) : url;
+    },
   });
   app.decorateRequest('playerId', null);
   await app.register(cookie);

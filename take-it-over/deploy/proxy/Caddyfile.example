@@ -1,0 +1,18 @@
+# Take It Over! behind an existing Caddy (automatic HTTPS). Use ONE of:
+
+# 1) Own subdomain — add a new site block:
+play.example.com {
+	reverse_proxy 127.0.0.1:8087
+}
+
+# 2) Under a path of an existing site — add inside that site's block
+#    (game started with TIO_PUBLIC_PATH=/play/):
+# example.com {
+# 	redir /play /play/
+# 	handle_path /play/* {
+# 		reverse_proxy 127.0.0.1:8087
+# 	}
+# 	# …your existing directives stay as they are…
+# }
+#
+# Caddy proxies WebSockets automatically. Then: sudo systemctl reload caddy

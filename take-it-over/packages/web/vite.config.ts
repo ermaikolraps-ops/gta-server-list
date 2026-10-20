@@ -5,6 +5,9 @@ import { VitePWA } from 'vite-plugin-pwa';
 const API = process.env.TIO_API ?? 'http://localhost:8080';
 
 export default defineConfig({
+  // Relative URLs: one build works at a domain root (play.example.com/) or
+  // under any path of an existing site (example.com/play/).
+  base: './',
   plugins: [
     react(),
     VitePWA({
@@ -15,7 +18,8 @@ export default defineConfig({
         short_name: 'Take It Over',
         description: 'Conquer the real world, 100 m at a time.',
         lang: 'en',
-        start_url: '/',
+        start_url: './',
+        scope: './',
         display: 'standalone',
         orientation: 'portrait',
         background_color: '#0b0f0c',
@@ -27,7 +31,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        navigateFallbackDenylist: [/^\/api/, /^\/ws/],
+        navigateFallbackDenylist: [/\/api\//, /\/ws$/],
         // Never cache game API responses; the server is the only authority.
         runtimeCaching: [
           {

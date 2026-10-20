@@ -106,3 +106,34 @@ describe('accounts and sessions', () => {
     expect(entry.status).toBe('provisional');
   });
 });
+
+describe('hosting under a path of an existing website', () => {
+  it('serves the API under the public path and scopes the session cookie to it', async () => {
+    const sub = await harness({ pool: h.pool, reset: false, publicPath: '/play/' });
+    const reg = await sub.app.inject({
+      method: 'POST',
+      url: '/play/api/auth/register',
+      headers: { 'x-tio-client': 'test' },
+      payload: { username: 'subpath', password: 'correct horse battery' },
+    });
+    expect(reg.statusCode).toBe(201);
+    const cookie = String(reg.headers['set-cookie']);
+    expect(cookie).toMatch(/Path=\/play\//);
+    const session = cookie.split(';')[0]!;
+    // a proxy that already stripped the prefix works too
+    const stripped = await sub.app.inject({ method: 'GET', url: '/api/me', headers: { cookie: session } });
+    const prefixed = await sub.app.inject({ method: 'GET', url: '/play/api/me', headers: { cookie: session } });
+    expect(stripped.statusCode).toBe(200);
+    expect(prefixed.statusCode).toBe(200);
+    expect(prefixed.json().username).toBe('subpath');
+    await sub.close();
+  });
+
+  it('normalises and validates the configured path', async () => {
+    const { normalizePublicPath } = await import('../src/config');
+    expect(normalizePublicPath(undefined)).toBe('/');
+    expect(normalizePublicPath('play')).toBe('/play/');
+    expect(normalizePublicPath('/games/tio')).toBe('/games/tio/');
+    expect(() => normalizePublicPath('/play?x=1')).toThrow();
+  });
+});

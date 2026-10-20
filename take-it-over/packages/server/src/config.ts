@@ -16,6 +16,12 @@ export interface Config {
   trustProxy: boolean;
   logLevel: string;
   schedulerIntervalMs: number;
+  /**
+   * Public path the game is served under, e.g. '/play/' on an existing site
+   * (default '/'). The session cookie is scoped to it, and the prefix is
+   * stripped from incoming URLs whether or not the reverse proxy strips it.
+   */
+  publicPath: string;
   /** Requests per minute: global per player/IP, auth endpoints per IP, GPS per player. */
   rateLimits: { global: number; auth: number; gps: number };
 }
@@ -23,6 +29,13 @@ export interface Config {
 function bool(v: string | undefined, dflt: boolean): boolean {
   if (v === undefined || v === '') return dflt;
   return ['1', 'true', 'yes', 'on'].includes(v.toLowerCase());
+}
+
+export function normalizePublicPath(raw: string | undefined): string {
+  const p = (raw ?? '/').trim();
+  if (!/^\/?[A-Za-z0-9._~/-]*$/.test(p)) throw new Error('TIO_PUBLIC_PATH must be a plain URL path like /play/');
+  const withLead = p.startsWith('/') ? p : `/${p}`;
+  return withLead.endsWith('/') ? withLead : `${withLead}/`;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -44,6 +57,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     trustProxy: bool(env.TIO_TRUST_PROXY, false),
     logLevel: env.LOG_LEVEL ?? 'info',
     schedulerIntervalMs: Number(env.TIO_SCHEDULER_INTERVAL_MS ?? 500),
+    publicPath: normalizePublicPath(env.TIO_PUBLIC_PATH),
     rateLimits: {
       global: Number(env.TIO_RATE_LIMIT_GLOBAL ?? 300),
       auth: Number(env.TIO_RATE_LIMIT_AUTH ?? 10),

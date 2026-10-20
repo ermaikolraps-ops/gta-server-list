@@ -30,7 +30,9 @@ export function sendLive(msg: unknown): boolean {
 
 function connect(): void {
   if (stopped) return;
-  const url = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`;
+  const u = new URL('ws', location.href); // relative: works under a sub-path
+  u.protocol = u.protocol === 'https:' ? 'wss:' : 'ws:';
+  const url = u.toString();
   setState({ connection: 'connecting' });
   const ws = new WebSocket(url);
   socket = ws;

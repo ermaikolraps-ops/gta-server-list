@@ -13,6 +13,14 @@ export class ApiError extends Error {
 
 type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
+/**
+ * API paths are written as '/api/…' but requested relative to the page, so
+ * the game works at a domain root or under a path such as /play/.
+ */
+export function apiUrl(path: string): string {
+  return path.startsWith('/') ? path.slice(1) : path;
+}
+
 function newKey(): string {
   return typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID()
@@ -34,11 +42,12 @@ export async function api<T>(
   if (body !== undefined) headers['content-type'] = 'application/json';
   if (opts.idempotent) headers['idempotency-key'] = newKey();
   const attempts = opts.idempotent ? 3 : 1;
+  const url = apiUrl(path);
   let lastErr: unknown;
   for (let i = 0; i < attempts; i++) {
     let res: Response;
     try {
-      res = await fetch(path, {
+      res = await fetch(url, {
         method,
         headers,
         credentials: 'same-origin',

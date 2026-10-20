@@ -25,7 +25,8 @@ export function coreRoutes(app: FastifyInstance, ctx: GameContext, gps: GpsServi
       httpOnly: true,
       sameSite: 'lax',
       secure: config.cookieSecure,
-      path: '/',
+      // Scoped to the game's path so other apps on the same domain never get it.
+      path: config.publicPath,
       maxAge: Math.floor(ctx.sessionTtlMs / 1000),
     });
 
@@ -53,7 +54,7 @@ export function coreRoutes(app: FastifyInstance, ctx: GameContext, gps: GpsServi
     const token = req.cookies[SESSION_COOKIE];
     if (token) await logout(ctx, token);
     if (req.playerId) gps.forget(req.playerId);
-    reply.clearCookie(SESSION_COOKIE, { path: '/' });
+    reply.clearCookie(SESSION_COOKIE, { path: config.publicPath });
     return { ok: true };
   });
 

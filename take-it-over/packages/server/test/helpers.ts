@@ -66,6 +66,7 @@ export async function harness(
     clock?: ManualClock;
     reset?: boolean;
       rateLimits?: Partial<Config['rateLimits']>;
+    publicPath?: string;
   } = {},
 ): Promise<Harness> {
   const pool = opts.pool ?? createPool(TEST_DB, 10);
@@ -90,6 +91,7 @@ export async function harness(
     databaseUrl: TEST_DB,
     landMask: 'postgis',
     rateLimits: { global: 100_000, auth: 100_000, gps: 100_000, ...opts.rateLimits },
+    publicPath: opts.publicPath ?? '/',
   };
   const app = await buildApp(ctx, services, config, { logger: false });
   await app.ready();

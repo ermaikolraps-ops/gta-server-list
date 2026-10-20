@@ -27,7 +27,7 @@ export function AuthScreen() {
   return (
     <div className="auth">
       <div className="auth-card">
-        <img src="/icons/icon-192.png" alt="" width={72} height={72} />
+        <img src="icons/icon-192.png" alt="" width={72} height={72} />
         <h1>{t('app.name')}</h1>
         <p className="muted">{t('app.tagline')}</p>
         <form onSubmit={submit}>

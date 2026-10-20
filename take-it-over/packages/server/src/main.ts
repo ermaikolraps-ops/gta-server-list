@@ -46,7 +46,7 @@ const ctx: GameContext = {
 const services = createServices(ctx);
 const app = await buildApp(ctx, services, config);
 ctx.log = app.log;
-services.start(config.schedulerIntervalMs);
+await services.start(config.schedulerIntervalMs);
 
 const shutdown = async (signal: string) => {
   app.log.info({ signal }, 'shutting down');

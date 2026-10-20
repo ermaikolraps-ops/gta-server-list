@@ -1,5 +1,9 @@
 # GTA Server List
 
+> **Also in this repository:** [Take It Over!](take-it-over/README.md), a GPS
+> territory-conquest web game (PWA + Node.js + PostgreSQL/PostGIS), lives in
+> `take-it-over/`. It is independent of the server-list app below.
+
 🇬🇧 [English](#english) · 🇪🇸 [Español](#español)
 
 ---

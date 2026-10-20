@@ -1,0 +1,56 @@
+# Development stack: PostgreSQL + PostGIS and the game server (which also
+# serves the built web app on http://localhost:8080).
+#
+#   docker compose up -d db
+#   docker compose run --rm land      # once: download and load the land mask
+#   docker compose up -d app
+#
+# Nothing here is a production deployment (no TLS, default passwords).
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: tio
+      POSTGRES_PASSWORD: tio
+      POSTGRES_DB: takeitover
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tio -d takeitover"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build: .
+    environment:
+      DATABASE_URL: postgres://tio:tio@db:5432/takeitover
+      TIO_LAND_MASK: ${TIO_LAND_MASK:-postgis}
+      TIO_COOKIE_SECURE: ${TIO_COOKIE_SECURE:-false}
+      TIO_ALLOWED_ORIGINS: ${TIO_ALLOWED_ORIGINS:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # One-off job: downloads Natural Earth land/lakes into ./data and loads them.
+  land:
+    build: .
+    profiles: ["setup"]
+    working_dir: /app
+    user: root
+    command: sh -c "node scripts/fetch-land-data.mjs && pnpm land:load"
+    environment:
+      DATABASE_URL: postgres://tio:tio@db:5432/takeitover
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

@@ -5,6 +5,7 @@ import { z } from 'zod';
 import type { Config } from './config';
 import type { GameContext } from './context';
 import type { Services } from './services';
+import { authenticate, SESSION_COOKIE } from './services/players';
 
 const gpsMsg = z.object({
   type: z.literal('gps'),
@@ -15,6 +16,8 @@ const gpsMsg = z.object({
 });
 
 const MAX_MSGS_PER_SEC = 10;
+/** How often an open socket re-checks that its session is still valid (logout, expiry). */
+const REAUTH_MS = 60_000;
 
 /**
  * One WebSocket per open client. Server → client: live game events for that
@@ -61,9 +64,18 @@ export async function registerWebSocket(
     if (!set) sockets.set(playerId, (set = new Set()));
     set.add(socket);
 
+    const token = req.cookies[SESSION_COOKIE];
+    let checkedAt = ctx.clock.now();
     let windowStart = Date.now();
     let count = 0;
     socket.on('message', async (raw) => {
+      if (ctx.clock.now() - checkedAt > REAUTH_MS) {
+        checkedAt = ctx.clock.now();
+        if ((await authenticate(ctx, token)) !== playerId) {
+          socket.close(4401, 'session ended');
+          return;
+        }
+      }
       const t = Date.now();
       if (t - windowStart > 1000) {
         windowStart = t;

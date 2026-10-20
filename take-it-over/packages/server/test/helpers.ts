@@ -65,7 +65,7 @@ export async function harness(
     pool?: Pool;
     clock?: ManualClock;
     reset?: boolean;
-    rateLimits?: Partial<Config['rateLimits']>;
+      rateLimits?: Partial<Config['rateLimits']>;
   } = {},
 ): Promise<Harness> {
   const pool = opts.pool ?? createPool(TEST_DB, 10);

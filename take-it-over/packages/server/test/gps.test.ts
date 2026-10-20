@@ -188,5 +188,14 @@ describe('GPS conquest', () => {
     const anon = new WebSocket(address.replace('http', 'ws') + '/ws');
     const code = await new Promise<number>((resolve) => anon.on('close', (c) => resolve(c)));
     expect(code).toBe(4401);
+
+    // a socket stops working once its session is logged out
+    const again = new WebSocket(address.replace('http', 'ws') + '/ws', { headers: { cookie: p.cookie } });
+    await new Promise((resolve) => again.on('message', resolve));
+    await api(h, p, 'POST', '/api/auth/logout');
+    h.clock.advance(61_000);
+    const closed = new Promise<number>((resolve) => again.on('close', (c) => resolve(c)));
+    again.send(JSON.stringify({ type: 'gps', lat: 40.3, lon: 0.3, accuracy: 5 }));
+    expect(await closed).toBe(4401);
   });
 });

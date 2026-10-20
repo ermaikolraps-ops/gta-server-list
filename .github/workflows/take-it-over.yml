@@ -1,0 +1,46 @@
+name: Take It Over!
+
+on:
+  push:
+    paths:
+      - "take-it-over/**"
+      - ".github/workflows/take-it-over.yml"
+  pull_request:
+    paths:
+      - "take-it-over/**"
+      - ".github/workflows/take-it-over.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: tio
+          POSTGRES_PASSWORD: tio
+          POSTGRES_DB: takeitover_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tio -d takeitover_test"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    defaults:
+      run:
+        working-directory: take-it-over
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: take-it-over/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+        env:
+          TEST_DATABASE_URL: postgres://tio:tio@localhost:5432/takeitover_test
+      - run: pnpm build

@@ -9,7 +9,8 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "grid:generate": "tsx scripts/generate-band-table.ts"
+    "grid:generate": "tsx scripts/generate-band-table.ts",
+    "params:doc": "tsx scripts/params-doc.ts"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",

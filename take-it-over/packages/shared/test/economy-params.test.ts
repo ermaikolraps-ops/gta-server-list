@@ -112,3 +112,12 @@ describe('parameters', () => {
     expect(() => mergeParams(DEFAULT_PARAMS, { economy: { creditsPerParcelPerHour: 1.5 } })).toThrow(/integer/);
   });
 });
+
+describe('parameter documentation', () => {
+  it('docs/game-parameters.md is generated from the current registry', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { renderParamsDoc } = await import('../src/params-doc');
+    const doc = readFileSync(new URL('../../../docs/game-parameters.md', import.meta.url), 'utf8');
+    expect(doc, 'run `pnpm params:doc`').toBe(renderParamsDoc());
+  });
+});

@@ -21,11 +21,10 @@ main() {
   exec 9>"${TMPDIR:-/tmp}/takeitover-deploy.lock"
   flock -n 9 || die "another deployment is already running"
   [ -f "$env_file" ] || die "missing $env_file (copy deploy/.env.production.example)"
-  set -a
-  # shellcheck disable=SC1090
-  . "$env_file"
-  set +a
-  local port="${TIO_PORT:-8087}"
+  local port build_flags
+  port="$(env_get TIO_PORT)"
+  port="${port:-8087}"
+  build_flags="$(env_get TIO_DOCKER_BUILD_FLAGS)"
   compose() { docker compose -f "$deploy/docker-compose.prod.yml" --env-file "$env_file" "$@"; }
 
   if [ "${1:-}" = "--rollback" ]; then
@@ -57,8 +56,8 @@ main() {
 
   git checkout --quiet --detach "$sha"
   log "building takeitover-app:$sha"
-  # shellcheck disable=SC2086
-  docker build ${TIO_DOCKER_BUILD_FLAGS:-} -t "takeitover-app:$sha" "$root"
+  # shellcheck disable=SC2086  # flags are intentionally word-split
+  docker build $build_flags -t "takeitover-app:$sha" "$root"
 
   if compose ps --status running --services 2>/dev/null | grep -qx db; then
     log "backing up the database before migrating"
@@ -89,6 +88,16 @@ main() {
     if activate "$prev" && healthy "$port"; then log "previous release $prev is running again"; fi
   fi
   die "deployment of $sha failed"
+}
+
+# Reads KEY from the .env file as plain text (never executes it); strips optional quotes.
+env_get() {
+  local line
+  line="$(grep -E "^[[:space:]]*$1=" "$env_file" | tail -n 1 || true)"
+  line="${line#*=}"
+  line="${line%\"}"; line="${line#\"}"
+  line="${line%\'}"; line="${line#\'}"
+  printf '%s' "$line"
 }
 
 log() { printf '[deploy %s] %s\n' "$(date -u +%FT%TZ)" "$*"; }

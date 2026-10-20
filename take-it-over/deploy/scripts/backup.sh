@@ -15,11 +15,10 @@ main() {
   deploy="$root/deploy"
   env_file="$deploy/.env"
   label="${1:-manual}"
-  set -a
-  # shellcheck disable=SC1090
-  . "$env_file"
-  set +a
-  dir="${TIO_BACKUP_DIR:-/var/backups/takeitover}"
+  local days
+  dir="$(env_get TIO_BACKUP_DIR)"
+  dir="${dir:-/var/backups/takeitover}"
+  days="$(env_get TIO_BACKUP_DAYS)"
   mkdir -p "$dir"
   chmod 700 "$dir"
   file="$dir/takeitover-$(date -u +%Y%m%dT%H%M%SZ)-${label}.sql.gz"
@@ -29,8 +28,18 @@ main() {
     | gzip -9 >"$file.part"
   mv "$file.part" "$file"
   chmod 600 "$file"
-  find "$dir" -name 'takeitover-*.sql.gz' -mtime +"${TIO_BACKUP_DAYS:-14}" -delete
+  find "$dir" -name 'takeitover-*.sql.gz' -mtime +"${days:-14}" -delete
   echo "backup written: $file ($(du -h "$file" | cut -f1))"
+}
+
+# Reads KEY from the .env file as plain text (never executes it); strips optional quotes.
+env_get() {
+  local line
+  line="$(grep -E "^[[:space:]]*$1=" "$env_file" | tail -n 1 || true)"
+  line="${line#*=}"
+  line="${line%\"}"; line="${line#\"}"
+  line="${line%\'}"; line="${line#\'}"
+  printf '%s' "$line"
 }
 
 main "$@"

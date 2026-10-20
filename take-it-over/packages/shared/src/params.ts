@@ -26,7 +26,9 @@ const approved = <T>(value: T, note?: string): ParamDef<T> => ({ value, status: 
 const provisional = <T>(value: T, note: string): ParamDef<T> => ({ value, status: 'provisional', note });
 
 const PRICE_PENDING = 'Price pending balance simulations.';
-const STAT_PENDING = 'Unit stats not yet approved; tune with the battle lab.';
+const STAT_PENDING =
+  'Not approved. HP set so every type has equal square-law strength; bonuses then decide equal-power matchups (docs/combat.md).';
+const UNIT_PRICE_PENDING = 'Price pending simulations; provisionally ≈ one credit per point of unit power.';
 
 export const PARAM_DEFS = {
   economy: {
@@ -77,32 +79,32 @@ export const PARAM_DEFS = {
       attack: provisional(1, STAT_PENDING),
       defense: provisional(1.2, STAT_PENDING),
       hp: provisional(10, STAT_PENDING),
-      price: provisional(1, PRICE_PENDING),
+      price: provisional(1, UNIT_PRICE_PENDING),
     },
     armor: {
       attack: provisional(8, STAT_PENDING),
       defense: provisional(10, STAT_PENDING),
-      hp: provisional(60, STAT_PENDING),
-      price: provisional(14, PRICE_PENDING),
+      hp: provisional(35, STAT_PENDING),
+      price: provisional(9, UNIT_PRICE_PENDING),
     },
     artillery: {
       attack: provisional(9, STAT_PENDING),
       defense: provisional(2, STAT_PENDING),
-      hp: provisional(20, STAT_PENDING),
-      price: provisional(9, PRICE_PENDING),
+      hp: provisional(25, STAT_PENDING),
+      price: provisional(6, UNIT_PRICE_PENDING),
     },
     antiArmor: {
       attack: provisional(4, STAT_PENDING),
       defense: provisional(3, STAT_PENDING),
-      hp: provisional(16, STAT_PENDING),
-      price: provisional(5, PRICE_PENDING),
+      hp: provisional(20, STAT_PENDING),
+      price: provisional(4, UNIT_PRICE_PENDING),
     },
   },
   combat: {
     bonusMultiplier: approved(1.5, '+50% damage on the approved matchups.'),
     diminishingThreshold: approved(10000, 'Power per side per front before the logarithmic curve applies.'),
     damagePerAttackPerRound: provisional(
-      0.0102,
+      0.0367,
       'Damage constant. Calibrated with the battle lab so balanced 180-round wars lose ~40–60% (see docs/combat.md).',
     ),
     defenseReference: provisional(5, 'Mitigation = ref / (ref + defense).'),

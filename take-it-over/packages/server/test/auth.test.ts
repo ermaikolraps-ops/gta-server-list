@@ -137,3 +137,29 @@ describe('hosting under a path of an existing website', () => {
     expect(() => normalizePublicPath('/play?x=1')).toThrow();
   });
 });
+
+describe('client address behind a reverse proxy', () => {
+  it('trusts only the hop the proxy appended, so a spoofed X-Forwarded-For cannot dodge rate limits', async () => {
+    const { loadConfig, proxyHops } = await import('../src/config');
+    expect(proxyHops('true')).toBe(1);
+    expect(proxyHops('2')).toBe(2);
+    expect(proxyHops('false')).toBe(0);
+    expect(loadConfig({ TIO_TRUST_PROXY: 'true' }).trustProxyHops).toBe(1);
+
+    const behindProxy = await harness({ pool: h.pool, reset: false, rateLimits: { auth: 3 }, trustProxyHops: 1 });
+    const statuses: number[] = [];
+    for (let i = 0; i < 6; i++) {
+      const res = await behindProxy.app.inject({
+        method: 'POST',
+        url: '/api/auth/register',
+        // the attacker rotates a fake left-most address; nginx appends the real one last
+        headers: { 'x-tio-client': 'test', 'x-forwarded-for': `10.9.9.${i}, 203.0.113.7` },
+        payload: { username: 'x', password: 'y' },
+      });
+      statuses.push(res.statusCode);
+    }
+    await behindProxy.close();
+    expect(statuses.slice(0, 3).every((s) => s === 400)).toBe(true);
+    expect(statuses.slice(3).every((s) => s === 429)).toBe(true);
+  });
+});

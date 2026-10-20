@@ -13,7 +13,12 @@ export interface Config {
   landMask: 'postgis' | 'permissive';
   /** Directory of the built web app to serve, if any. */
   webDist?: string;
-  trustProxy: boolean;
+  /**
+   * Reverse proxies in front of the server whose X-Forwarded-For entries are
+   * trusted (0 = none). Only the last N hops are trusted, so a client cannot
+   * fake its address by sending its own X-Forwarded-For header.
+   */
+  trustProxyHops: number;
   logLevel: string;
   schedulerIntervalMs: number;
   /**
@@ -29,6 +34,13 @@ export interface Config {
 function bool(v: string | undefined, dflt: boolean): boolean {
   if (v === undefined || v === '') return dflt;
   return ['1', 'true', 'yes', 'on'].includes(v.toLowerCase());
+}
+
+/** TIO_TRUST_PROXY: 'true' = one proxy (the usual case), a number = that many hops, else none. */
+export function proxyHops(raw: string | undefined): number {
+  if (raw === undefined || raw === '') return 0;
+  if (/^\d+$/.test(raw)) return Number(raw);
+  return bool(raw, false) ? 1 : 0;
 }
 
 export function normalizePublicPath(raw: string | undefined): string {
@@ -54,7 +66,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     paramsFile: env.TIO_PARAMS_FILE || undefined,
     landMask,
     webDist: env.TIO_WEB_DIST || undefined,
-    trustProxy: bool(env.TIO_TRUST_PROXY, false),
+    trustProxyHops: proxyHops(env.TIO_TRUST_PROXY),
     logLevel: env.LOG_LEVEL ?? 'info',
     schedulerIntervalMs: Number(env.TIO_SCHEDULER_INTERVAL_MS ?? 500),
     publicPath: normalizePublicPath(env.TIO_PUBLIC_PATH),

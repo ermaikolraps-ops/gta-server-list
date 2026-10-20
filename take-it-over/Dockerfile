@@ -22,7 +22,8 @@ FROM deps AS app
 COPY tsconfig.base.json ./
 COPY scripts ./scripts
 COPY packages ./packages
-RUN pnpm --filter @tio/web build
+# Type-checking already runs in CI; the image only bundles (≈650 MB peak RAM, capped).
+RUN NODE_OPTIONS=--max-old-space-size=1024 pnpm --filter @tio/web exec vite build
 ENV NODE_ENV=production \
     PORT=8080 \
     TIO_WEB_DIST=/app/packages/web/dist

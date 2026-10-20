@@ -67,6 +67,7 @@ export async function harness(
     reset?: boolean;
       rateLimits?: Partial<Config['rateLimits']>;
     publicPath?: string;
+    trustProxyHops?: number;
   } = {},
 ): Promise<Harness> {
   const pool = opts.pool ?? createPool(TEST_DB, 10);
@@ -92,6 +93,7 @@ export async function harness(
     landMask: 'postgis',
     rateLimits: { global: 100_000, auth: 100_000, gps: 100_000, ...opts.rateLimits },
     publicPath: opts.publicPath ?? '/',
+    trustProxyHops: opts.trustProxyHops ?? 0,
   };
   const app = await buildApp(ctx, services, config, { logger: false });
   await app.ready();

@@ -12,7 +12,9 @@ name: takeitover
 
 services:
   db:
-    image: postgis/postgis:16-3.4
+    # postgis/postgis is x86_64-only; deploy.sh selects the multi-arch
+    # imresamu/postgis:16-3.4 (same PostgreSQL 16 + PostGIS 3.4) on ARM servers.
+    image: ${TIO_DB_IMAGE:-postgis/postgis:16-3.4}
     restart: unless-stopped
     environment:
       POSTGRES_USER: tio

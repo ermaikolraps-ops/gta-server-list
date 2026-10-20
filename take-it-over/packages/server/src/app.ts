@@ -24,7 +24,9 @@ export async function buildApp(
   const prefix = config.publicPath;
   const app = Fastify({
     logger: opts.logger ?? { level: config.logLevel },
-    trustProxy: config.trustProxy,
+    // Trust exactly N hops (not `true`): only the entries our own proxy appended
+    // count, so a client cannot spoof its address with its own X-Forwarded-For.
+    trustProxy: config.trustProxyHops > 0 ? (_addr: string, hop: number) => hop < config.trustProxyHops : false,
     bodyLimit: 256 * 1024,
     // Served under a path of an existing site: accept both stripped and
     // unstripped URLs from the reverse proxy.

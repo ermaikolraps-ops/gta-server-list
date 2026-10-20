@@ -93,6 +93,15 @@ else
   echo "docker not installed"
 fi
 
+section "Packet forwarding and VPN/VM bridges (installing Docker would change forwarding)"
+echo "net.ipv4.ip_forward = $(cat /proc/sys/net/ipv4/ip_forward 2>/dev/null)"
+if have iptables; then
+  if fwd="$(iptables -S FORWARD 2>/dev/null)"; then echo "${fwd%%$'\n'*}"; else echo "iptables: need sudo to read the FORWARD policy"; fi
+fi
+ip -brief link 2>/dev/null | awk '$1 ~ /^(wg|tun|tap|lxdbr|virbr|br-|docker)/ {print $1, $2}'
+echo "-- swap"
+swapon --show 2>/dev/null || true
+
 section "Databases already on the host"
 for svc in postgresql mysql mariadb redis-server mongod; do
   if systemctl list-unit-files 2>/dev/null | grep -q "^${svc}"; then

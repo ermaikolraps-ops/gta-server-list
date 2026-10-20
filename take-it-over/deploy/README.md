@@ -89,11 +89,13 @@ Measured on the production compose stack.
 | Situation | App | Database | Notes |
 |---|---|---|---|
 | Idle | 45 MiB | 85 MiB | the job scheduler polls every 0.5 s; CPU stays near 0 |
-| 100 players, one GPS fix per second each, plus map loads | ≤190 MiB, ≤1 CPU (mean 0.25) | ≤140 MiB, ≤0.45 CPU (mean 0.08) | 6,000 of 6,000 fixes accepted; p50 5 ms, p95 98 ms |
-| Caps (in `deploy/.env`) | 512 MiB, 1.0 CPU | 768 MiB, 0.5 CPU | the game never uses more than 1.5 of the 2 CPUs |
-| Build (each deployment) | peak ≈ 650 MiB; 37 s from scratch on 4 cores here, so expect 1–2 min on 2 vCPU | | refused when less than `TIO_MIN_BUILD_MEM_MB` (1000 MiB) is free |
+| 100 players, one GPS fix per second each, plus map loads | ≤190 MiB, ≤1 CPU (mean 0.25) | ≤140 MiB, ≤0.45 CPU (mean 0.08) | 6,000 of 6,000 fixes accepted; p50 5 ms, p95 98 ms, p99 under 1 s |
+| Caps (in `deploy/.env`) | 512 MiB, 1.0 CPU | 768 MiB, 0.5 CPU | while running, the game never uses more than 1.5 of the 2 CPUs |
+| Build (each deployment) | peak ≈ 650 MiB; 37 s from scratch on 4 cores here, so expect 1–2 min on 2 vCPU | | not CPU-capped; refused when less than `TIO_MIN_BUILD_MEM_MB` (1000 MiB) is free |
 
-The 100-player test above ran with these caps in place.
+The 100-player test above ran with these caps in place. Because a build can
+briefly use both CPUs, deployments run by hand (or are approved in GitHub)
+rather than on every push, so you can pick a quiet moment.
 
 - **Disk:** about 0.65 GB per app image (the last 3 are kept for rollback,
   sharing most layers), 0.85 GB for the database image, about 130 MB for the

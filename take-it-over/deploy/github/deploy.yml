@@ -1,0 +1,52 @@
+# TEMPLATE — inactive until moved to .github/workflows/deploy.yml (after the plan is approved).
+#
+# Deploys a commit to the VPS over SSH. The SSH key can only run
+# deploy/scripts/deploy-from-ssh.sh (a forced command), which accepts nothing
+# but a commit hash or "main". No VPS password or shell access is stored in GitHub.
+#
+# Repository secrets (Settings → Secrets and variables → Actions):
+#   VPS_HOST         hostname or IP of the VPS
+#   VPS_USER         the deploy user (e.g. takeitover)
+#   VPS_SSH_KEY      private key whose public half is in that user's authorized_keys
+#   VPS_KNOWN_HOSTS  output of `ssh-keyscan -t ed25519 <host>` (pins the host key)
+# Optional: an environment named "production" with required reviewers makes every
+# deployment wait for a manual approval click.
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Commit hash, or 'main'"
+        required: true
+        default: main
+  # Automatic deploys after green CI on main — uncomment once manual deploys work:
+  # workflow_run:
+  #   workflows: [CI]
+  #   types: [completed]
+  #   branches: [main]
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 30
+    steps:
+      - name: Deploy over SSH (forced command)
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+          REF: ${{ github.event.inputs.ref || github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          ssh -i ~/.ssh/deploy_key -o BatchMode=yes -o StrictHostKeyChecking=yes "$VPS_USER@$VPS_HOST" "$REF"

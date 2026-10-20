@@ -1,0 +1,37 @@
+# CI for the standalone take-it-over repository (this folder is the repo root there).
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: tio
+          POSTGRES_PASSWORD: tio
+          POSTGRES_DB: takeitover_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tio -d takeitover_test"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+        env:
+          TEST_DATABASE_URL: postgres://tio:tio@localhost:5432/takeitover_test
+      - run: pnpm build
+      - name: Lint deployment scripts
+        run: shellcheck -x deploy/*.sh deploy/scripts/*.sh

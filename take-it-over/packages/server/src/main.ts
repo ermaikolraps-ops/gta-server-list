@@ -46,12 +46,11 @@ const ctx: GameContext = {
 const services = createServices(ctx);
 const app = await buildApp(ctx, services, config);
 ctx.log = app.log;
-const started = (services as { start?: () => void }).start;
-started?.call(services);
+services.start(config.schedulerIntervalMs);
 
 const shutdown = async (signal: string) => {
   app.log.info({ signal }, 'shutting down');
-  (services as { stop?: () => Promise<void> }).stop?.call(services);
+  services.stop();
   await app.close();
   await pool.end();
   process.exit(0);

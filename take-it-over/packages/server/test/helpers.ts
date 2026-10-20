@@ -1,10 +1,13 @@
-import { DEFAULT_PARAMS, type GameParams } from '@tio/shared';
+import { type CellId, cellAt, composition, DEFAULT_PARAMS, type GameParams, type UnitType } from '@tio/shared';
 import type { FastifyInstance } from 'fastify';
 import { buildApp } from '../src/app';
 import { ManualClock } from '../src/clock';
 import { type Config, loadConfig } from '../src/config';
 import type { GameContext } from '../src/context';
-import { createPool, type Pool } from '../src/db/pool';
+import { createPool, type Pool, withTx } from '../src/db/pool';
+import { unitsJson } from '../src/services/common';
+import { grant } from '../src/services/economy';
+import { claimNeutralCells } from '../src/services/territory';
 import { EventBus, type PlayerEvent } from '../src/events';
 import { PostgisLandMask } from '../src/land';
 import { createServices, type Services } from '../src/services';
@@ -22,6 +25,17 @@ const GAME_TABLES = [
   'explored_zones',
   'drones',
   'alliances',
+  'jobs',
+  'bases',
+  'aa_batteries',
+  'armies',
+  'repairs',
+  'drone_missions',
+  'ships',
+  'wars',
+  'war_cells',
+  'alliance_invites',
+  'notifications',
 ];
 
 export async function resetGameTables(pool: Pool): Promise<void> {
@@ -149,4 +163,61 @@ export async function walk(
 /** Sends `n` fixes at the same point, 1 s apart — enough to conquer when n ≥ 3. */
 export function stand(h: Harness, p: TestPlayer, lat: number, lon: number, n = 3) {
   return walk(h, p, Array.from({ length: n }, () => ({ lat, lon })));
+}
+
+// ------------------------------------------------------------ Phase C helpers
+
+
+/** A rectangle of cells starting at (lat, lon), `rows` × `cols` cells of ~100 m. */
+export function block(lat: number, lon: number, rows: number, cols: number): CellId[] {
+  const out: CellId[] = [];
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) out.push(cellAt(lat + r * 0.0009, lon + c * 0.00119));
+  return [...new Set(out)];
+}
+
+export async function giveCells(h: Harness, playerId: string, cells: CellId[]): Promise<void> {
+  await withTx(h.pool, (tx) => claimNeutralCells(tx, h.ctx, playerId, cells, 'gps', h.clock.now()));
+}
+
+export async function giveCredits(h: Harness, playerId: string, credits: number): Promise<void> {
+  await withTx(h.pool, (tx) => grant(tx, h.ctx, playerId, credits, 'test', null, h.clock.now()));
+}
+
+/** Inserts an idle army directly (test setup shortcut for recruit/deploy). */
+export async function armyAt(
+  h: Harness,
+  ownerId: string,
+  lat: number,
+  lon: number,
+  units: Partial<Record<UnitType, number>>,
+): Promise<string> {
+  const res = await h.pool.query<{ id: string }>(
+    `INSERT INTO armies (owner_id, units, status, lat, lon, created_at) VALUES ($1, $2, 'idle', $3, $4, $5) RETURNING id`,
+    [ownerId, unitsJson(composition(units)), lat, lon, new Date(h.clock.now())],
+  );
+  return res.rows[0]!.id;
+}
+
+/** Advances game time and runs every job that fell due, in order. */
+export async function advance(h: Harness, ms: number): Promise<number> {
+  h.clock.advance(ms);
+  return h.services.scheduler.runDue();
+}
+
+/** Gives the player a fresh accurate GPS fix at a point. */
+export async function fixAt(h: Harness, p: TestPlayer, lat: number, lon: number) {
+  h.clock.advance(1000);
+  return api(h, p, 'POST', '/api/gps', { lat, lon, accuracy: 5 });
+}
+
+export async function armyRow(h: Harness, id: string) {
+  return (await h.pool.query('SELECT * FROM armies WHERE id = $1', [id])).rows[0];
+}
+
+export async function ownerOf(h: Harness, cell: CellId): Promise<string | undefined> {
+  return (await h.pool.query('SELECT owner_id FROM parcels WHERE cell_id = $1', [cell])).rows[0]?.owner_id;
+}
+
+export function key(): string {
+  return `k-${Math.random().toString(36).slice(2)}-${Date.now()}`;
 }

@@ -7,3 +7,4 @@ export * from './combat/diminishing';
 export * from './protocol';
 export * from './combat/engine';
 export * from './combat/rng';
+export * from './drones';

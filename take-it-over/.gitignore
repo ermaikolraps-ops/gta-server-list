@@ -10,3 +10,7 @@ dev-dist/
 
 # deployment state on the server
 deploy/.releases
+
+# Server-specific deployment notes (operational details): kept out of git,
+# shared only privately (zip / private repo).
+deploy/sites/

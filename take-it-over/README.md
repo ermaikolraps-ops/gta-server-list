@@ -160,6 +160,7 @@ take-it-over/
 
 ## Documentation
 
+- [Project status](docs/STATUS.md): what is done, what is pending, how to continue
 - [Architecture](docs/architecture.md): components, authority model, persistence, scaling
 - [Decisions](docs/decisions.md): the main technical choices and why
 - [World grid](docs/world-grid.md): how 100 m parcels are laid out on the ellipsoid

@@ -1,4 +1,4 @@
-import { type BBox, bboxToIdRanges, type CellId, zoneOfCell } from '@tio/shared';
+import { type BBox, bboxToIdRanges, type CellId, type OwnerInfo, type TerritoryView, zoneOfCell } from '@tio/shared';
 import type { GameContext } from '../context';
 import type { Queryable, Tx } from '../db/pool';
 import { changeParcelCount, lockPlayers, settle } from './economy';
@@ -74,18 +74,6 @@ export async function ownersOf(db: Queryable, cells: CellId[]): Promise<Map<Cell
   );
   return new Map(res.rows.map((r) => [Number(r.cell_id), r.owner_id]));
 }
-
-export interface OwnerInfo {
-  id: string;
-  name: string;
-  color: string;
-  allianceId: string | null;
-  allianceColor: string | null;
-}
-
-export type TerritoryView =
-  | { mode: 'cells'; cells: [CellId, number][]; owners: OwnerInfo[]; truncated: boolean }
-  | { mode: 'zones'; zoneDeg: number; zones: [number, number, number, number][]; owners: OwnerInfo[]; truncated: boolean };
 
 const MAX_CELLS = 30000;
 const MAX_ZONES = 20000;

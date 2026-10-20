@@ -1,4 +1,4 @@
-import { creditsToUnits } from '@tio/shared';
+import { creditsToUnits, type Profile } from '@tio/shared';
 import type { GameContext } from '../context';
 import { withTx } from '../db/pool';
 import { GameError } from '../errors';
@@ -115,21 +115,6 @@ export async function authenticate(ctx: GameContext, token: string | undefined):
     await ctx.pool.query('UPDATE sessions SET last_seen_at = $2 WHERE token_hash = $1', [hashToken(token), new Date(now)]);
   }
   return row.player_id;
-}
-
-export interface Profile {
-  id: string;
-  username: string;
-  color: string;
-  locale: string;
-  allianceId: string | null;
-  credits: number;
-  creditFraction: number;
-  parcels: number;
-  incomePerHour: number;
-  notificationPrefs: Record<string, boolean>;
-  gpsSuspendedUntil: string | null;
-  serverTime: number;
 }
 
 export async function profile(ctx: GameContext, playerId: string): Promise<Profile> {

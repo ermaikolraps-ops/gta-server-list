@@ -1,4 +1,4 @@
-import { type CellId, cellAt, distanceM, type LatLon, zoneKey, zoneOf } from '@tio/shared';
+import { type CellId, cellAt, distanceM, type GpsResult, type LatLon, zoneKey, zoneOf } from '@tio/shared';
 import type { GameContext } from '../context';
 import { withTx } from '../db/pool';
 import { grant } from './economy';
@@ -11,24 +11,7 @@ export interface GpsFix {
   accuracy: number;
 }
 
-export type GpsStatus =
-  | 'rate_limited'
-  | 'low_accuracy'
-  | 'suspended'
-  | 'water'
-  | 'own'
-  | 'enemy'
-  | 'tracking'
-  | 'conquered';
-
-export interface GpsResult {
-  status: GpsStatus;
-  cell?: CellId;
-  dwellMs?: number;
-  requiredMs: number;
-  ownerId?: string;
-  explorationReward?: number;
-}
+export type { GpsResult, GpsStatus } from '@tio/shared';
 
 interface Presence {
   /** Cell the dwell timer is running in, or null after a reset. */

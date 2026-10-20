@@ -81,7 +81,17 @@ export async function buildApp(
   if (config.webDist) {
     const root = resolve(config.webDist);
     if (existsSync(root)) {
-      await app.register(fastifyStatic, { root, wildcard: false });
+      await app.register(fastifyStatic, {
+        root,
+        // Serve whatever is on disk now, so a rebuilt client needs no restart.
+        wildcard: true,
+        cacheControl: false,
+        setHeaders(res, path) {
+          // Hashed bundles never change; the shell and service worker must revalidate.
+          if (/[\\/]assets[\\/]/.test(path)) res.setHeader('cache-control', 'public, max-age=31536000, immutable');
+          else res.setHeader('cache-control', 'no-cache');
+        },
+      });
       // SPA fallback for client-side routes.
       app.setNotFoundHandler((req, reply) => {
         if (req.method === 'GET' && !req.url.startsWith('/api') && !req.url.startsWith('/ws')) {

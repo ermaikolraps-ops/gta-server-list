@@ -4,3 +4,4 @@ export * from './grid';
 export * from './params';
 export * from './economy';
 export * from './combat/diminishing';
+export * from './protocol';

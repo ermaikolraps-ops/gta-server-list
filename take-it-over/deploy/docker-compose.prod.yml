@@ -1,0 +1,80 @@
+# Take It Over! — production stack for a shared VPS.
+#
+# Isolation from the services already on the host:
+# - own compose project name, network and volumes ("takeitover_*");
+# - PostgreSQL/PostGIS publishes NO port (reachable only from the app container);
+# - the app listens on 127.0.0.1 only; the existing reverse proxy forwards to it;
+# - memory limits and log rotation so the game cannot starve other services.
+#
+# Used by deploy/scripts/deploy.sh; images are built by that script and
+# tagged with the git commit (TIO_IMAGE_TAG) so a rollback is one command.
+name: takeitover
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tio
+      POSTGRES_DB: takeitover
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tio -d takeitover"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    mem_limit: ${TIO_DB_MEM_LIMIT:-768m}
+    shm_size: 128m
+    logging: &logging
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  app:
+    image: takeitover-app:${TIO_IMAGE_TAG:-current}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://tio:${POSTGRES_PASSWORD}@db:5432/takeitover
+      PORT: "8080"
+      TIO_PUBLIC_PATH: ${TIO_PUBLIC_PATH:-/}
+      TIO_ALLOWED_ORIGINS: ${TIO_ALLOWED_ORIGINS:?set TIO_ALLOWED_ORIGINS (e.g. https://example.com) in deploy/.env}
+      TIO_TRUST_PROXY: "true"
+      TIO_COOKIE_SECURE: "true"
+      TIO_LAND_MASK: postgis
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "127.0.0.1:${TIO_PORT:-8087}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    mem_limit: ${TIO_APP_MEM_LIMIT:-512m}
+    logging: *logging
+
+  # One-off: download Natural Earth land/lakes and load them into PostGIS.
+  #   docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env run --rm land
+  land:
+    image: takeitover-app:${TIO_IMAGE_TAG:-current}
+    profiles: ["setup"]
+    working_dir: /app
+    user: root
+    command: sh -c "node scripts/fetch-land-data.mjs && pnpm land:load"
+    environment:
+      DATABASE_URL: postgres://tio:${POSTGRES_PASSWORD}@db:5432/takeitover
+    volumes:
+      - ../data:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

@@ -49,6 +49,8 @@ export interface AppState {
   /** Bumped when server data may have changed, so views refetch. */
   ticks: { territory: number; drones: number; armies: number; wars: number; alliance: number; notifications: number };
   focus: { lat: number; lon: number; zoom?: number } | null;
+  /** Shown while the player is asked to tap the map. */
+  pickHint: import('./i18n').MessageKey | null;
 }
 
 const initial: AppState = {
@@ -62,6 +64,7 @@ const initial: AppState = {
   toasts: [],
   ticks: { territory: 0, drones: 0, armies: 0, wars: 0, alliance: 0, notifications: 0 },
   focus: null,
+  pickHint: null,
 };
 
 let state = initial;

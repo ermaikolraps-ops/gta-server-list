@@ -1,12 +1,14 @@
 import { useEffect } from 'react';
 import { useLocale } from './i18n';
 import { MapView } from './map/MapView';
+import { MilitaryLayer } from './map/MilitaryLayer';
 import { boot, refreshMe } from './session';
 import { useStore } from './store';
 import { AuthScreen } from './ui/AuthScreen';
 import { GpsChip, Hud } from './ui/Hud';
 import { Nav, Toasts } from './ui/Nav';
 import { Panels } from './ui/Panels';
+import { PickBanner, SelectionBar } from './ui/SelectionBar';
 
 export function App() {
   useLocale();
@@ -29,9 +31,12 @@ export function App() {
   return (
     <div className="app">
       <MapView />
+      <MilitaryLayer />
       <Hud />
       <GpsChip />
       <Panels />
+      <SelectionBar />
+      <PickBanner />
       <Toasts />
       <Nav />
     </div>

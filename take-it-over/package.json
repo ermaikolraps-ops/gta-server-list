@@ -1,0 +1,23 @@
+{
+  "name": "take-it-over",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Take It Over! — persistent GPS territory conquest game",
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev:server": "pnpm --filter @tio/server dev",
+    "dev:web": "pnpm --filter @tio/web dev",
+    "build": "pnpm --filter @tio/web build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r --workspace-concurrency=1 test",
+    "migrate": "pnpm --filter @tio/server migrate",
+    "land:fetch": "bash scripts/fetch-land-data.sh",
+    "land:load": "pnpm --filter @tio/server land:load",
+    "lab": "pnpm --filter @tio/lab lab",
+    "grid:generate": "pnpm --filter @tio/shared grid:generate"
+  }
+}

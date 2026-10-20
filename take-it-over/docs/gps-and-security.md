@@ -68,5 +68,7 @@ data exists.
 | CSRF | custom `X-TIO-Client` header on every state change + Origin check; WebSocket origin check |
 | Input | zod schemas on every endpoint; range checks for coordinates, cell ids, unit counts |
 | Abuse | per-player/IP rate limits; stricter on login and registration |
+| Client IP | behind a proxy only the configured number of hops is trusted (`TIO_TRUST_PROXY=true` = one), so a spoofed `X-Forwarded-For` cannot dodge the per-IP limits |
+| Sessions on WebSocket | re-checked every 60 s; a logged-out or expired session is disconnected |
 | Money | row locks, settled balances, idempotency keys, integer credit units, ledger of every movement |
 | Authority | all game rules evaluated on the server; the client is never trusted |

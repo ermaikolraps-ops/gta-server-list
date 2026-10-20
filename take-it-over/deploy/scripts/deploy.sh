@@ -184,6 +184,17 @@ preflight() {
     fail "only ${avail_mb} MiB of memory available; a build needs ${min_mb} MiB (add swap or free memory first)"
   fi
 
+  # Docker refuses a CPU cap larger than the number of CPUs.
+  local ncpu name cap
+  ncpu="$(nproc 2>/dev/null || echo 1)"
+  ok "$ncpu CPU(s)"
+  for name in TIO_APP_CPUS TIO_DB_CPUS; do
+    cap="$(env_get "$name")"
+    if [ -n "$cap" ] && ! awk -v c="$cap" -v n="$ncpu" 'BEGIN { exit !(c + 0 > 0 && c + 0 <= n && c ~ /^[0-9.]+$/) }'; then
+      fail "$name=$cap must be a number between 0.01 and $ncpu"
+    fi
+  done
+
   local docker_dir free_mb
   docker_dir="$(docker info --format '{{.DockerRootDir}}' 2>/dev/null || echo /var/lib/docker)"
   [ -d "$docker_dir" ] || docker_dir=/

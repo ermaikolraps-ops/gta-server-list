@@ -33,9 +33,11 @@ complete Spanish translation is included.
 | C | Sea transport with water-verified routes; alliances of up to 10 | ✅ |
 | C | WebSocket live updates, stored notifications with per-category settings, rankings | ✅ |
 
-Test suite: 149 automated tests (shared 65, server 75, lab 5, web 4), most of
-them integration tests against a real PostgreSQL + PostGIS database, including
-server restarts in the middle of drone flights and wars.
+Test suite: 176 automated tests (shared 89, server 78, lab 5, web 4). The
+server tests are integration tests against a real PostgreSQL + PostGIS database,
+including server restarts in the middle of drone flights and wars; the shared
+tests check the world grid against an independent geometric oracle at every
+band seam, at both poles and along the antimeridian.
 
 ## Quick start with Docker
 
@@ -99,6 +101,13 @@ The game is not a static site: the server is the only authority over credits,
 territory, drones and wars, so it needs a host that runs a Node.js process (or
 Docker) next to PostgreSQL + PostGIS. A small VPS is enough to start.
 
+For a VPS that already runs other sites, follow the step-by-step plan in
+[deploy/README.md](deploy/README.md): a self-contained Docker Compose project
+on a loopback port, behind your existing reverse proxy and HTTPS, with
+preflight checks, backups, health-checked deployments and automatic rollback.
+It supports Ubuntu 22.04, 24.04 and 26.04 on x86_64 or ARM64. The general
+steps are:
+
 1. Run the Docker image (or `pnpm build` then `pnpm --filter @tio/server start`
    with `TIO_WEB_DIST=packages/web/dist`). It serves the PWA, the API and the
    WebSocket on one port.
@@ -107,7 +116,8 @@ Docker) next to PostgreSQL + PostGIS. A small VPS is enough to start.
    GPS and service workers on insecure origins. Forward WebSocket upgrades for
    `/ws`.
 3. Set `NODE_ENV=production` (secure cookies), `TIO_TRUST_PROXY=true` behind the
-   proxy, strong database credentials, and back up the database.
+   proxy, `TIO_PUBLIC_PATH` if the game lives under a path such as `/play/`,
+   strong database credentials, and back up the database.
 4. Load land data once. For accurate coastlines load OSM land polygons (see
    [docs/maps-and-land.md](docs/maps-and-land.md)).
 5. Review the map-tile provider's terms for your traffic, or self-host tiles.
@@ -128,7 +138,8 @@ All settings are environment variables; see [.env.example](.env.example).
 | `TIO_WEB_DIST` | — | Directory of the built PWA to serve |
 | `TIO_COOKIE_SECURE` | `true` in production | Secure session cookies |
 | `TIO_ALLOWED_ORIGINS` | — | Extra origins allowed to send state-changing requests |
-| `TIO_TRUST_PROXY` | `false` | Trust `X-Forwarded-*` from a reverse proxy |
+| `TIO_TRUST_PROXY` | `false` | `true` trusts one reverse-proxy hop for the client IP; a number trusts that many |
+| `TIO_PUBLIC_PATH` | `/` | Path the game is served under, e.g. `/play/` (scopes the cookie, stripped from URLs) |
 | `TIO_PARAMS_FILE` | — | JSON overrides of game parameters (validated) |
 | `TIO_RATE_LIMIT_GLOBAL` / `_AUTH` / `_GPS` | 300 / 10 / 600 | Requests per minute |
 | `VITE_MAP_TILEJSON` / `VITE_MAP_GLYPHS` | OpenFreeMap | Vector tiles and fonts (build time) |
@@ -142,6 +153,7 @@ take-it-over/
     server/   Fastify API + WebSocket, Postgres migrations, durable job scheduler, game services
     web/      React + Vite PWA, MapLibre map, panels, EN/ES translations
     lab/      battle lab CLI
+  deploy/     production compose, VPS inspection, deploy/backup scripts, proxy templates
   docs/       architecture, decisions, assumptions, rules and parameters
   scripts/    land data download
 ```

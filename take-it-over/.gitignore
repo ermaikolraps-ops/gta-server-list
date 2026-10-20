@@ -7,3 +7,6 @@ data/*
 lab-output/
 *.log
 dev-dist/
+
+# deployment state on the server
+deploy/.releases
